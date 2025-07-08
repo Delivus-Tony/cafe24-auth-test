@@ -17,8 +17,9 @@
 
 <script>
   const params = new URLSearchParams(window.location.search);
-  // mall_id 또는 state 값 중 하나라도 있으면 처리
-  const mall_id = params.get("mall_id") || params.get("state");  // ← 여기가 핵심
+
+  // mall_id가 없으면 state에서 시도
+  let mall_id = params.get("mall_id") || params.get("state");
 
   if (!mall_id) {
     document.getElementById("error").innerText = "❌ mall_id가 URL에 없습니다.";
