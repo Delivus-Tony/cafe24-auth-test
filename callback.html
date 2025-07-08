@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>카페24 앱 설치 완료</title>
+  <title>카페24 앱 설치</title>
   <style>
     body { font-family: sans-serif; padding: 40px; }
     code { background: #f0f0f0; padding: 5px 10px; border-radius: 5px; display: inline-block; }
@@ -10,42 +10,43 @@
   </style>
 </head>
 <body>
-  <h2>✅ 카페24 앱 설치 요청 수신됨</h2>
-  <p id="status">파라미터 처리 중...</p>
+  <h2>✅ 카페24 앱 설치</h2>
+  <p id="message">처리 중입니다...</p>
   <p id="auth-url" class="hidden">🔗 인증 URL: <a id="link" href="#" target="_blank"></a></p>
-  <pre id="token" style="background:#f9f9f9;padding:10px;border-radius:8px;"></pre>
+  <p id="token" class="hidden">🔐 Access Token: <code id="access"></code></p>
   <p id="error" style="color:red;"></p>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const mall_id = params.get("mall_id") || params.get("state");
     const code = params.get("code");
+    const state = params.get("state"); // = mall_id
+    const mall_id = params.get("mall_id");
 
-    const status = document.getElementById("status");
+    const $ = (id) => document.getElementById(id);
 
-    if (!mall_id) {
-      document.getElementById("error").innerText = "❌ 필요한 정보가 URL에 없습니다.";
-    } else if (code) {
-      status.innerText = "🔐 액세스 토큰 요청 중...";
-
-      // 2단계: 액세스 토큰 요청
+    if (code && state) {
+      // 🔹 인증 후 → 토큰 요청
+      $("message").innerText = "Access token 요청 중...";
       fetch("https://cafe24-oauth-server.onrender.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mall_id, code })
+        body: JSON.stringify({ code, mall_id: state })
       })
       .then(res => res.json())
       .then(data => {
-        status.innerText = "✅ 액세스 토큰 발급 완료";
-        document.getElementById("token").innerText = JSON.stringify(data, null, 2);
+        if (data.access_token) {
+          $("message").innerText = "🎉 Access Token 발급 완료!";
+          $("token").classList.remove("hidden");
+          $("access").innerText = data.access_token;
+        } else {
+          throw new Error(data.error_description || JSON.stringify(data));
+        }
       })
-      .catch(err => {
-        document.getElementById("error").innerText = "❌ 토큰 요청 실패: " + err;
-      });
-    } else {
-      status.innerText = "🛠️ 인증 URL 생성 중...";
-
-      // 1단계: mall_id → 인증 URL 생성
+      .catch(err => $("error").innerText = "❌ 토큰 요청 실패: " + err);
+    }
+    else if (mall_id) {
+      // 🔹 설치 요청 시작
+      $("message").innerText = "설치 요청 중...";
       fetch("https://cafe24-oauth-server.onrender.com/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,15 +54,14 @@
       })
       .then(res => res.text())
       .then(url => {
-        const link = document.getElementById("link");
-        link.href = url;
-        link.textContent = url;
-        document.getElementById("auth-url").classList.remove("hidden");
-        status.innerText = "🧩 인증 URL 생성됨. 클릭해서 승인 진행해주세요.";
+        $("message").innerText = "👇 아래 링크 클릭하여 앱 설치를 완료하세요";
+        $("auth-url").classList.remove("hidden");
+        $("link").href = url;
+        $("link").textContent = url;
       })
-      .catch(err => {
-        document.getElementById("error").innerText = "❌ 인증 URL 요청 실패: " + err;
-      });
+      .catch(err => $("error").innerText = "❌ 설치 요청 실패: " + err);
+    } else {
+      $("error").innerText = "❌ 필요한 정보가 URL에 없습니다.";
     }
   </script>
 </body>
