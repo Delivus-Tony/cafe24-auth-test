@@ -17,7 +17,7 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const mall_id = params.get("mall_id");
+    const mall_id = params.get("mall_id") || params.get("state");
     const code = params.get("code");
 
     if (mall_id && !code) {
