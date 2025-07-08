@@ -10,19 +10,18 @@
   </style>
 </head>
 <body>
-  <h2>✅ 카페24 앱 설치 요청 수신됨</h2>
-  <p>mall_id 정보를 서버에 전달 중입니다...</p>
-  <p id="auth-url" class="hidden">🔗 인증 URL: <a id="link" href="#" target="_blank"></a></p>
+  <h2>✅ 카페24 앱 설치 결과</h2>
+  <p id="message">처리 중입니다...</p>
+  <p id="result" class="hidden">🔗 <a id="link" href="#" target="_blank"></a></p>
   <p id="error" style="color:red;"></p>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const mall_id = params.get("mall_id");
+    const code = params.get("code");
 
-    if (!mall_id) {
-      document.getElementById("error").innerText = "❌ mall_id가 URL에 없습니다.";
-    } else {
-      // Flask 서버로 mall_id 전달
+    if (mall_id && !code) {
+      // 1단계: mall_id만 있는 경우 → 인증 URL 요청
       fetch("https://cafe24-oauth-server.onrender.com/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,11 +32,32 @@
         const link = document.getElementById("link");
         link.href = url;
         link.textContent = url;
-        document.getElementById("auth-url").classList.remove("hidden");
+        document.getElementById("result").classList.remove("hidden");
+        document.getElementById("message").textContent = "🔗 인증 URL을 클릭해 앱 설치를 계속 진행하세요.";
       })
       .catch(err => {
         document.getElementById("error").innerText = "❌ 서버 요청 실패: " + err;
       });
+    } else if (code) {
+      // 2단계: code가 있는 경우 → access_token 요청
+      fetch("https://cafe24-oauth-server.onrender.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, mall_id })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("message").textContent = "✅ 액세스 토큰을 성공적으로 받았습니다.";
+        document.getElementById("result").classList.remove("hidden");
+        const link = document.getElementById("link");
+        link.href = "#";
+        link.textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        document.getElementById("error").innerText = "❌ 토큰 요청 실패: " + err;
+      });
+    } else {
+      document.getElementById("error").innerText = "❌ 필요한 정보가 URL에 없습니다.";
     }
   </script>
 </body>
