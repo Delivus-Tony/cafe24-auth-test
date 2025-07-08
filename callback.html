@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>카페24 앱 설치 완료</title>
+  <title>카페24 앱 설치 및 인증</title>
   <style>
     body { font-family: sans-serif; padding: 40px; }
     code { background: #f0f0f0; padding: 5px 10px; border-radius: 5px; display: inline-block; }
@@ -10,9 +10,9 @@
   </style>
 </head>
 <body>
-  <h2>✅ 카페24 앱 설치 결과</h2>
-  <p id="message">처리 중입니다...</p>
-  <p id="result" class="hidden">🔗 <a id="link" href="#" target="_blank"></a></p>
+  <h2>✅ 카페24 앱 설치/인증 흐름</h2>
+  <p id="status">처리 중...</p>
+  <p id="auth-url" class="hidden">🔗 인증 URL: <a id="link" href="#" target="_blank"></a></p>
   <p id="error" style="color:red;"></p>
 
   <script>
@@ -20,8 +20,12 @@
     const mall_id = params.get("mall_id") || params.get("state");
     const code = params.get("code");
 
-    if (mall_id && !code) {
-      // 1단계: mall_id만 있는 경우 → 인증 URL 요청
+    if (!mall_id) {
+      document.getElementById("error").innerText = "❌ mall_id가 URL에 없습니다.";
+    } else if (!code) {
+      // STEP 1️⃣ mall_id → 인증 URL 요청
+      document.getElementById("status").innerText = "🔄 mall_id 기반 인증 URL 생성 중...";
+
       fetch("https://cafe24-oauth-server.onrender.com/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,32 +36,32 @@
         const link = document.getElementById("link");
         link.href = url;
         link.textContent = url;
-        document.getElementById("result").classList.remove("hidden");
-        document.getElementById("message").textContent = "🔗 인증 URL을 클릭해 앱 설치를 계속 진행하세요.";
+        document.getElementById("auth-url").classList.remove("hidden");
+        document.getElementById("status").innerText = "🔗 아래 링크를 클릭해 설치를 진행하세요.";
       })
       .catch(err => {
         document.getElementById("error").innerText = "❌ 서버 요청 실패: " + err;
       });
-    } else if (code) {
-      // 2단계: code가 있는 경우 → access_token 요청
+
+    } else {
+      // STEP 2️⃣ code + mall_id → access_token 요청
+      document.getElementById("status").innerText = "🔄 access token 요청 중...";
+
       fetch("https://cafe24-oauth-server.onrender.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, mall_id })
+        body: JSON.stringify({ mall_id, code })
       })
       .then(res => res.json())
       .then(data => {
-        document.getElementById("message").textContent = "✅ 액세스 토큰을 성공적으로 받았습니다.";
-        document.getElementById("result").classList.remove("hidden");
-        const link = document.getElementById("link");
-        link.href = "#";
-        link.textContent = JSON.stringify(data, null, 2);
+        document.getElementById("status").innerText = "✅ access token 응답 수신 완료:";
+        const result = document.createElement("pre");
+        result.innerText = JSON.stringify(data, null, 2);
+        document.body.appendChild(result);
       })
       .catch(err => {
         document.getElementById("error").innerText = "❌ 토큰 요청 실패: " + err;
       });
-    } else {
-      document.getElementById("error").innerText = "❌ 필요한 정보가 URL에 없습니다.";
     }
   </script>
 </body>
