@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>카페24 앱 설치 완료</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; }
+    code { background: #f0f0f0; padding: 5px 10px; border-radius: 5px; display: inline-block; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h2>✅ 카페24 앱 설치 요청 수신됨</h2>
+  <p>mall_id 정보를 서버에 전달 중입니다...</p>
+  <p id="auth-url" class="hidden">🔗 인증 URL: <a id="link" href="#" target="_blank"></a></p>
+  <p id="error" style="color:red;"></p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const mall_id = params.get("mall_id");
+
+    if (!mall_id) {
+      document.getElementById("error").innerText = "❌ mall_id가 URL에 없습니다.";
+    } else {
+      // Flask 서버로 mall_id 전달
+      fetch("https://cafe24-oauth-server.onrender.com/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mall_id })
+      })
+      .then(res => res.text())
+      .then(url => {
+        const link = document.getElementById("link");
+        link.href = url;
+        link.textContent = url;
+        document.getElementById("auth-url").classList.remove("hidden");
+      })
+      .catch(err => {
+        document.getElementById("error").innerText = "❌ 서버 요청 실패: " + err;
+      });
+    }
+  </script>
+</body>
+</html>
