@@ -10,37 +10,34 @@
   </style>
 </head>
 <body>
-  <h2>✅ 인증 페이지로 이동 중...</h2>
-  <p id="status">인증 URL 생성 중...</p>
+  <h2>✅ 카페24 앱 설치 처리 중...</h2>
+  <p id="status"></p>
   <p id="auth-url" class="hidden">🔗 인증 URL: <a id="link" href="#" target="_blank"></a></p>
   <p id="error" style="color:red;"></p>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const mall_id = params.get("mall_id");
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const mall_id = params.get("mall_id") || params.get("state");  // ✅ fallback 처리
 
-    if (!mall_id) {
-      document.getElementById("error").innerText = "❌ mall_id가 URL에 없습니다.";
-    } else {
-      fetch("https://cafe24-oauth-server.onrender.com/install", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mall_id })
-      })
-      .then(res => res.text())
-      .then(url => {
-        const link = document.getElementById("link");
-        link.href = url;
-        link.textContent = url;
-        document.getElementById("auth-url").classList.remove("hidden");
-
-        // ✅ 자동 인증 URL로 이동
-        window.location.href = url;
-      })
-      .catch(err => {
-        document.getElementById("error").innerText = "❌ 서버 요청 실패: " + err;
-      });
-    }
-  </script>
+  if (!mall_id) {
+    document.getElementById("error").innerText = "❌ mall_id가 URL에 없습니다.";
+  } else {
+    fetch("https://cafe24-oauth-server.onrender.com/install", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mall_id })
+    })
+    .then(res => res.text())
+    .then(url => {
+      const link = document.getElementById("link");
+      link.href = url;
+      link.textContent = url;
+      document.getElementById("auth-url").classList.remove("hidden");
+    })
+    .catch(err => {
+      document.getElementById("error").innerText = "❌ 서버 요청 실패: " + err;
+    });
+  }
+</script>
 </body>
 </html>
